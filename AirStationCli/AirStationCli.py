@@ -21,13 +21,22 @@ class AirStationCli:
         self.response = self.session.get(self.BASE_URL + "login.html")
         return self
 
-    def login_post(self, username, password):
-        data = {
-            "nosave_Username": username,
-            "nosave_Password": password,
-            "MobileDevice": 0,
-            "nosave_session_num": self.get_session(),
-        }
+    def login_post(self, username, password, mobile=False):
+        if mobile:
+            data = {
+                "nosave_Username": username,
+                "nosave_Password": password,
+                "MobileDevice": 0,
+                "nosave_session_num": self.get_session(),
+            }
+        else:
+            data = {
+                "nosave_Username": username,
+                "nosave_Password": password,
+                "MobileDevice": 0,
+                "mobile": "on",
+                "nosave_session_num": self.get_session(),
+            }
         self.response = self.session.post(self.BASE_URL + "login.html", data=data)
         return self
 
@@ -35,12 +44,32 @@ class AirStationCli:
         self.response = self.session.get(self.BASE_URL + "index_adv.html")
         return self
 
-    # dhcps_lease.html 構文ミスがひどい...
+    def init(self):
+        self.response = self.session.get(self.BASE_URL + "init.html")
+        return AirStationCliInit(AirStationCli=self)
+
+    def route_reg(self):
+        self.response = self.session.get(self.BASE_URL + "route_reg.html")
+        return self
+
+    def nat_reg(self):
+        self.response = self.session.get(self.BASE_URL + "nat_reg.html")
+        data = {
+            "name": "(id_name|id_wan|id_lanip|id_proto|id_wport|id_lport|id_enableBtn)",
+            "any": "(.*?)",
+            "number": "(\\d+)",
+        }
+        reg = '<span id="{name}{number}">{any}</span>'.format(**data)
+        return AirStationCliNat(
+            AirStationCli=self,
+            data=re.findall(reg, self.response.content.decode("utf-8")),
+        )
+
     def dhcps_lease(self):
         self.response = self.session.get(self.BASE_URL + "dhcps_lease.html")
         data = {
             "name": "(DHCPLANIP|DHCPLMAC|LeasePeriod|DHCPLease|id_BtuStatus)",
-            "any": "(.+)",
+            "any": "(.*?)",
             "number": "(\\d+)",
         }
         reg = '<td><div name="{name}{number}">{any}</div></td>'.format(**data)
@@ -49,10 +78,145 @@ class AirStationCli:
             data=re.findall(reg, self.response.content.decode("utf-8")),
         )
 
-    def route_reg(self):
-        self.response = self.session.get(self.BASE_URL + "route_reg.html")
-        return self
 
+class AirStationCliInit:
+    def __init__(self, AirStationCli):
+        self.AirStationCli = AirStationCli
+
+    def downloadcfg(self):
+        data = {
+            "nosave_buttoncfg": 1,
+            "nosave_saveConfRC4Key": "",
+            "nosave_saveConfRC4Encryption": 0,
+            "nosave_loadConfRC4Encryption": 0,
+            "nosave_session_num": self.AirStationCli.get_session(),
+        }
+        self.response = self.AirStationCli.session.post(
+            self.AirStationCli.BASE_URL + "init.html", data=data
+        )
+        return self.response
+
+    def uploadcfg(self, cfgfile):
+        file = {'nosave_F14': cfgfile}
+        self.response = self.AirStationCli.session.post(
+            self.AirStationCli.BASE_URL + "init.html", files=file
+        )
+        return self.response
+
+    def reboot(self):
+        data = {
+            "nosave_reboot": 1,
+            "nosave_session_num": self.AirStationCli.get_session(),
+        }
+        self.response = self.AirStationCli.session.post(
+            self.AirStationCli.BASE_URL + "init.html", data=data
+        )
+        return "再起動中です。" in self.response.content.decode("utf-8")
+
+@dataclass
+class AirStationCliNat:
+    AirStationCli: object = None
+    data: list = None
+
+    def __post_init__(self):
+        for i in range(int(self.data[-1][1])):
+            if self.data[i * 6][0] != "id_name":
+                self.data.insert(i * 6, ('id_name', str(i + 1), self.data[i * 6 - 6][2]))
+
+        self.data = [
+            AirStationCliNatData(
+                AirStationCli=self.AirStationCli,
+                **{
+                    self.data[i * 6 + ii][0]: self.data[i * 6 + ii][2]
+                    for ii in range(6)
+                },
+                id=self.data[i * 6][1]
+            )
+            for i in range(int(len(self.data) / 6))
+        ]
+
+    def add(self, group, lanip, wan = "wan", nosave_proto="tcp/udp", porttype="tcp", wanport=80, lanport=80, ip = "1.1.1.1"):
+        data = {
+            "nosave_wan": wan,
+            "nosave_proto": nosave_proto,
+            "nosave_lanip": lanip,
+            "nosave_add": 1,
+            "nosave_add_tmp": 0,
+            "nosave_erritem": "",
+            "nosave_errcontent": "",
+            "nosave_session_num": self.AirStationCli.get_session(),
+        }
+        for value in self.data:
+            if value.id_name == group:
+                data.update({
+                    "nosave_grpList": -1,
+                    "nosave_grpName": group,
+                })
+                break
+        else:
+            data.update({
+                "nosave_grpList": group,
+            })
+
+        if wan == "manual":
+            data.update({
+                "nosave_manualIP": ip
+            })
+        if nosave_proto == "one":
+            data.update({
+                "nosave_ProtNum": wanport
+            })
+        elif nosave_proto == "tcp/udp":
+            data.update({
+                "nosave_PortType": porttype,
+            })
+            if porttype in ["tcp","udp"]:
+                data.update({
+                    "nosave_wport": wanport,
+                    "nosave_lport": lanport,
+                })
+
+
+        params = {"timestampt": self.AirStationCli.get_timestamp()}
+        self.response = self.AirStationCli.session.post(
+            self.AirStationCli.BASE_URL + "nat_reg.html", params=params, data=data
+        )
+        return "設定が完了しました。再スタートしています。" in self.response.content.decode("utf-8")
+
+
+@dataclass
+class AirStationCliNatData:
+    AirStationCli: object = None
+    id_name: str = None
+    id_wan: str = None
+    id_lanip: str = None
+    id_proto: str = None
+    id_wport: str = None
+    id_lport: str = None
+    id_enableBtn: str = None
+    id: str = None
+
+    def delete(self):
+        data = {
+            "nosave_grpList": -1,
+            "nosave_grpName": "",
+            "nosave_wan": "wan",
+            "nosave_proto": "tcp/udp",
+            "nosave_PortType": "tcp",
+            "nosave_wport": "",
+            "nosave_lanip": self.id_lanip,
+            "nosave_lport": "",
+            "nosave_add_tmp": 0,
+            "nosave_del": self.id,
+            "nosave_erritem": "",
+            "nosave_errcontent": "",
+            "nosave_session_num": self.AirStationCli.get_session(),
+        }
+        params = {"timestampt": self.AirStationCli.get_timestamp()}
+        self.response = self.AirStationCli.session.post(
+            self.AirStationCli.BASE_URL + "nat_reg.html", params=params, data=data
+        )
+        return "設定が完了しました。再スタートしています。" in self.response.content.decode("utf-8")
 
 @dataclass
 class AirStationCliDHCP:
@@ -67,7 +231,7 @@ class AirStationCliDHCP:
                     self.data[i * 4 + ii][0]: self.data[i * 4 + ii][2]
                     for ii in range(4)
                 },
-                Id=self.data[i * 4][1]
+                id=self.data[i * 4][1]
             )
             for i in range(int(len(self.data) / 4))
         ]
@@ -92,11 +256,11 @@ class AirStationCliDHCPData:
     DHCPLMAC: str = None
     LeasePeriod: str = None
     DHCPLease: str = None
-    Id: str = None
+    id: str = None
 
     def delete(self):
         data = {
-            "nosave_DDelete": int(self.Id),
+            "nosave_DDelete": int(self.id),
             "nosave_session_num": self.AirStationCli.get_session(),
         }
         params = {"timestampt": self.AirStationCli.get_timestamp()}
