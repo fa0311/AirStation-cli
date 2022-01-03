@@ -3,12 +3,32 @@ import re
 from dataclasses import dataclass
 import datetime
 
+if __name__ == "__main__":
+    from dataclasses import asdict
+    import argparse
+
 
 class AirStationCli:
-    def __init__(self):
+    def __init__(self, default_gateway="192.168.11.1"):
         self.USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36"
         self.session = requests.session()
-        self.BASE_URL = "http://192.168.11.1/"
+        self.BASE_URL = "http://{0}/".format(default_gateway)
+
+    def get_red_info(self):
+        reg = r'<div style="color:red">(.*?)</div>'
+        find = re.findall(reg, self.response.content.decode("utf-8"))
+        return False if len(find) == 0 else find[0]
+
+    def get_title(self):
+        reg = r"<title>(.*?)</title>"
+        find = re.findall(reg, self.response.content.decode("utf-8"))
+        return False if len(find) == 0 else find[0]
+
+    def is_redirect_page(self):
+        return self.get_title == "Redirect Page"
+
+    def is_wait(self):
+        return self.get_title == "しばらくお待ちください。"
 
     def get_session(self):
         reg = r'<input type="hidden" name="nosave_session_num" value="(\d+)">'
@@ -91,27 +111,28 @@ class AirStationCliInit:
             "nosave_loadConfRC4Encryption": 0,
             "nosave_session_num": self.AirStationCli.get_session(),
         }
-        self.response = self.AirStationCli.session.post(
+        response = self.AirStationCli.session.post(
             self.AirStationCli.BASE_URL + "init.html", data=data
         )
-        return self.response
+        return response
 
     def uploadcfg(self, cfgfile):
-        file = {'nosave_F14': cfgfile}
-        self.response = self.AirStationCli.session.post(
+        file = {"nosave_F14": cfgfile}
+        self.AirStationCli.response = self.AirStationCli.session.post(
             self.AirStationCli.BASE_URL + "init.html", files=file
         )
-        return self.response
+        return self.AirStationCli.response
 
     def reboot(self):
         data = {
             "nosave_reboot": 1,
             "nosave_session_num": self.AirStationCli.get_session(),
         }
-        self.response = self.AirStationCli.session.post(
+        self.AirStationCli.response = self.AirStationCli.session.post(
             self.AirStationCli.BASE_URL + "init.html", data=data
         )
-        return "再起動中です。" in self.response.content.decode("utf-8")
+        return self.AirStationCli.is_wait()
+
 
 @dataclass
 class AirStationCliNat:
@@ -121,7 +142,9 @@ class AirStationCliNat:
     def __post_init__(self):
         for i in range(int(self.data[-1][1])):
             if self.data[i * 6][0] != "id_name":
-                self.data.insert(i * 6, ('id_name', str(i + 1), self.data[i * 6 - 6][2]))
+                self.data.insert(
+                    i * 6, ("id_name", str(i + 1), self.data[i * 6 - 6][2])
+                )
 
         self.data = [
             AirStationCliNatData(
@@ -135,7 +158,17 @@ class AirStationCliNat:
             for i in range(int(len(self.data) / 6))
         ]
 
-    def add(self, group, lanip, wan = "wan", nosave_proto="tcp/udp", porttype="tcp", wanport=80, lanport=80, ip = "1.1.1.1"):
+    def add(
+        self,
+        group,
+        lanip,
+        wan="wan",
+        nosave_proto="tcp/udp",
+        porttype="tcp",
+        wanport=80,
+        lanport=80,
+        ip="1.1.1.1",
+    ):
         data = {
             "nosave_wan": wan,
             "nosave_proto": nosave_proto,
@@ -148,40 +181,43 @@ class AirStationCliNat:
         }
         for value in self.data:
             if value.id_name == group:
-                data.update({
-                    "nosave_grpList": -1,
-                    "nosave_grpName": group,
-                })
+                data.update(
+                    {
+                        "nosave_grpList": -1,
+                        "nosave_grpName": group,
+                    }
+                )
                 break
         else:
-            data.update({
-                "nosave_grpList": group,
-            })
+            data.update(
+                {
+                    "nosave_grpList": group,
+                }
+            )
 
         if wan == "manual":
-            data.update({
-                "nosave_manualIP": ip
-            })
+            data.update({"nosave_manualIP": ip})
         if nosave_proto == "one":
-            data.update({
-                "nosave_ProtNum": wanport
-            })
+            data.update({"nosave_ProtNum": wanport})
         elif nosave_proto == "tcp/udp":
-            data.update({
-                "nosave_PortType": porttype,
-            })
-            if porttype in ["tcp","udp"]:
-                data.update({
-                    "nosave_wport": wanport,
-                    "nosave_lport": lanport,
-                })
-
+            data.update(
+                {
+                    "nosave_PortType": porttype,
+                }
+            )
+            if porttype in ["tcp", "udp"]:
+                data.update(
+                    {
+                        "nosave_wport": wanport,
+                        "nosave_lport": lanport,
+                    }
+                )
 
         params = {"timestampt": self.AirStationCli.get_timestamp()}
-        self.response = self.AirStationCli.session.post(
+        self.AirStationCli.response = self.AirStationCli.session.post(
             self.AirStationCli.BASE_URL + "nat_reg.html", params=params, data=data
         )
-        return "設定が完了しました。再スタートしています。" in self.response.content.decode("utf-8")
+        return self.AirStationCli.is_wait()
 
 
 @dataclass
@@ -216,7 +252,8 @@ class AirStationCliNatData:
         self.response = self.AirStationCli.session.post(
             self.AirStationCli.BASE_URL + "nat_reg.html", params=params, data=data
         )
-        return "設定が完了しました。再スタートしています。" in self.response.content.decode("utf-8")
+        return self.AirStationCli.is_wait()
+
 
 @dataclass
 class AirStationCliDHCP:
@@ -243,10 +280,10 @@ class AirStationCliDHCP:
             "nosave_session_num": self.AirStationCli.get_session(),
         }
         params = {"timestampt": self.AirStationCli.get_timestamp()}
-        self.response = self.AirStationCli.session.post(
+        self.AirStationCli.response = self.AirStationCli.session.post(
             self.AirStationCli.BASE_URL + "dhcps_lease.html", params=params, data=data
         )
-        return "設定が完了しました。再スタートしています。" in self.response.content.decode("utf-8")
+        return self.AirStationCli.is_wait()
 
 
 @dataclass
@@ -264,7 +301,66 @@ class AirStationCliDHCPData:
             "nosave_session_num": self.AirStationCli.get_session(),
         }
         params = {"timestampt": self.AirStationCli.get_timestamp()}
-        self.response = self.AirStationCli.session.post(
+        self.AirStationCli.response = self.AirStationCli.session.post(
             self.AirStationCli.BASE_URL + "dhcps_lease.html", params=params, data=data
         )
-        return "設定が完了しました。再スタートしています。" in self.response.content.decode("utf-8")
+        return self.AirStationCli.is_wait()
+
+
+if __name__ == "__main__":
+
+    def mapping(dataclass):
+        print(
+            "|".join(
+                [
+                    "" if th in ["AirStationCli"] else "".join(["" if ord(c) > 255 else c for c in th[:30]]).center(30, " ")
+                    for th in asdict(dataclass[0])
+                ]
+            )
+        )
+        print("-" * ((len(asdict(dataclass[0])) - 1) * 30),end="")
+        for row in dataclass:
+            print(
+                "|".join(
+                    [
+                        "\n"
+                        if th in ["AirStationCli"]
+                        else "".join(["" if ord(c) > 255 else c for c in str(getattr(row, th))[:30]]).center(30, " ")
+                        for th in asdict(row)
+                    ]
+                ),end=""
+            )
+
+    argpar = argparse.ArgumentParser(
+        prog="AirStationCli",
+        usage="https://github.com/fa0311/AirStation-cli",
+        description="BUFFALO AirStation Command Line Interface",
+    )
+    argpar.add_argument("action")
+    argpar.add_argument("-u", "--user", default="admin")
+    argpar.add_argument("-p", "--password", default="password")
+    argpar.add_argument("--default-gateway", default="192.168.11.1")
+
+    argpar.add_argument("--login-skip", action="store_true")
+    argpar.add_argument("--json", action="store_true")
+    argpar.add_argument("--mobile", action="store_true")
+
+    arg = argpar.parse_args()
+
+    airstation = AirStationCli(default_gateway=arg.default_gateway)
+    if not arg.login_skip:
+        info = (
+            airstation.login_get()
+            .login_post(arg.user, arg.password, mobile=arg.mobile)
+            .get_red_info()
+        )
+        print(info if info else "ログインに成功しました。")
+
+    if arg.action == "name":
+        print(airstation.index_adv().get_title())
+
+    if arg.action == "nat-reg":
+        mapping(airstation.nat_reg().data)
+
+    if arg.action == "dhcps-lease":
+        mapping(airstation.dhcps_lease().data)
