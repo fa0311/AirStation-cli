@@ -8,13 +8,12 @@
 python AirStationCli.py login --default-gateway 192.168.11.1 -u admin -p password --mobile
 # ログインに成功しました。 or パスワードが間違っています。etc.
 ```
-
-| argument        | default      |
-|-----------------|--------------|
-| default-gateway | 192.168.11.1 |
-| user            | admin        |
-| password        | password     |
-| mobile          | false        |
+| argument          | alias | default      |
+|-------------------|-------|--------------|
+| --default-gateway |       | 192.168.11.1 |
+| --user            | -u    | admin        |
+| --password        | -p    | password     |
+| --mobile          |       | false        |
 
 ### LoginSkip
 
@@ -39,14 +38,12 @@ python AirStationCli.py nat-reg --login-skip
 # table
 ```
 
-### AddNatRegulation
-### DeleteNatRegulation
+### DhcpLeases
 
-
-
-
-
-
+```shell
+python AirStationCli.py dhcp-leases --login-skip
+# table
+```
 
 ## Usage-API
 
@@ -146,7 +143,7 @@ Methods
 ### DhcpsLease
 
 ```python
-airstation.dhcps_lease()
+airstation.dhcp_leases()
 ```
 
 Attributes
@@ -157,7 +154,7 @@ Methods
 - add(dhcp_ip, dhcp_mac): bool
 
 ```python
-airstation.dhcps_lease().add("192.168.11.30","00:00:5e:00:53:00")
+airstation.dhcp_leases().add("192.168.11.30","00:00:5e:00:53:00")
 ```
 
 ### @dataclass AirStationCliDHCPData
