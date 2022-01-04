@@ -25,10 +25,10 @@ class AirStationCli:
         return False if len(find) == 0 else find[0]
 
     def is_redirect_page(self):
-        return self.get_title == "Redirect Page"
+        return self.get_title() == "Redirect Page"
 
     def is_wait(self):
-        return self.get_title == "しばらくお待ちください。"
+        return self.get_title() == "しばらくお待ちください。"
 
     def get_session(self):
         reg = r'<input type="hidden" name="nosave_session_num" value="(\d+)">'
