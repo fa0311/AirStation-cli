@@ -337,8 +337,8 @@ if __name__ == "__main__":
         description="BUFFALO AirStation Command Line Interface",
     )
     argpar.add_argument("action")
-    argpar.add_argument("-u", "--user", default="admin")
-    argpar.add_argument("-p", "--password", default="password")
+    argpar.add_argument("-u", "-user", "--username", default="admin")
+    argpar.add_argument("-p", "-pass", "--password", default="password")
     argpar.add_argument("--default-gateway", default="192.168.11.1")
 
     argpar.add_argument("--login-skip", action="store_true")
@@ -351,7 +351,7 @@ if __name__ == "__main__":
     if not arg.login_skip:
         info = (
             airstation.login_get()
-            .login_post(arg.user, arg.password, mobile=arg.mobile)
+            .login_post(arg.username, arg.password, mobile=arg.mobile)
             .get_red_info()
         )
         print(info if info else "ログインに成功しました。")

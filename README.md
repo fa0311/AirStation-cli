@@ -8,12 +8,12 @@
 python AirStationCli.py login --default-gateway 192.168.11.1 -u admin -p password --mobile
 # ログインに成功しました。 or パスワードが間違っています。etc.
 ```
-| argument          | alias | default      |
-|-------------------|-------|--------------|
-| --default-gateway |       | 192.168.11.1 |
-| --user            | -u    | admin        |
-| --password        | -p    | password     |
-| --mobile          |       | false        |
+| argument          | alias    | default      |
+|-------------------|----------|--------------|
+| --default-gateway |          | 192.168.11.1 |
+| --username        | -u -user | admin        |
+| --password        | -p -pass | password     |
+| --mobile          |          | false        |
 
 ### LoginSkip
 
@@ -61,14 +61,14 @@ airstation = AirStationCli.AirStationCli(default_gateway="192.168.11.1")
 ### Login
 
 ```python
-airstation.login_get().login_post(user="admin", password="password", mobile=False)
+airstation.login_get().login_post(username="admin", password="password", mobile=False)
 print(airstation.get_red_info())
 # False or パスワードが間違っています。etc.
 ```
 
 | argument        | default      |
 |-----------------|--------------|
-| user            | admin        |
+| username        | admin        |
 | password        | password     |
 | mobile          | false        |
 
