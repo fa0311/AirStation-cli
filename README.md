@@ -122,7 +122,7 @@ Methods
 | ip           | 1.1.1.1    | str                      | wan=manual                                                                    |
 
 ```python
-airstation.nat_reg().add(group="test", lanip="192.168.11.30", nosave_proto="tcp/udp", wanport=80, lanport=80)
+airstation.nat_reg().add(group="test", lanip="192.168.11.30", nosave_proto="tcp/udp", porttype="tcp", wanport=80, lanport=80)
 ```
 
 ### @dataclass AirStationCliNatData
