@@ -85,7 +85,7 @@ class AirStationCli:
             data=re.findall(reg, self.response.content.decode("utf-8")),
         )
 
-    def dhcps_lease(self):
+    def dhcp_leases(self):
         self.response = self.session.get(self.BASE_URL + "dhcps_lease.html")
         data = {
             "name": "(DHCPLANIP|DHCPLMAC|LeasePeriod|DHCPLease|id_BtuStatus)",
@@ -362,5 +362,5 @@ if __name__ == "__main__":
     if arg.action == "nat-reg":
         mapping(airstation.nat_reg().data)
 
-    if arg.action == "dhcps-lease":
-        mapping(airstation.dhcps_lease().data)
+    if arg.action == "dhcp-leases":
+        mapping(airstation.dhcp_leases().data)
