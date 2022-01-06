@@ -21,7 +21,7 @@ python AirStationCli.py login --default-gateway 192.168.11.1 -u admin -p passwor
 | --password        | -p -pass | password     |                   |
 | --login-mode      |          | auto         | auto, force, skip |
 | --mobile          |          | false        |                   |
-| --format          | -f       | table        | json, csv         |
+| --format          | -f       | table        | table, json, csv  |
 | --output          | -o       | None         | file path         |
 | --json-indent     |          | None         | int               |
 
