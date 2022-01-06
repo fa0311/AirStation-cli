@@ -1,47 +1,48 @@
 # AirStation-Cli(Beta)
 
 ## Usage-Cli
+### Description
+
+```shell
+# Python
+python AirStationCli.py [OPTIONS] [ACTION]
+```
 
 ### Login
 
 ```shell
-python AirStationCli.py login --default-gateway 192.168.11.1 -u admin -p password --mobile
+python AirStationCli.py login --default-gateway 192.168.11.1 -u admin -p password
 # ログインに成功しました。 or パスワードが間違っています。etc.
 ```
-| argument          | alias    | default      |
-|-------------------|----------|--------------|
-| --default-gateway |          | 192.168.11.1 |
-| --username        | -u -user | admin        |
-| --password        | -p -pass | password     |
-| --mobile          |          | false        |
-
-### LoginSkip
-
-既にログインしている場合<br>
-If you are already logged in<br>
-
-```shell
-python AirStationCli.py login --login-skip
-```
+| argument          | alias    | default      | description       |
+|-------------------|----------|--------------|-------------------|
+| --default-gateway |          | 192.168.11.1 |                   |
+| --username        | -u -user | admin        |                   |
+| --password        | -p -pass | password     |                   |
+| --login-mode      |          | auto         | auto, force, skip |
+| --mobile          |          | false        |                   |
+| --format          | -f       | table        | json, csv         |
+| --output          | -o       | None         | file path         |
+| --json-indent     |          | None         | int               |
 
 ### GetName
 
 ```shell
-python AirStationCli.py name --login-skip
+python AirStationCli.py name
 # WSR-1166DHPL2 - BUFFALO AirStation
 ```
 
 ### NatRegulation
 
 ```shell
-python AirStationCli.py nat-reg --login-skip
+python AirStationCli.py nat-reg
 # table
 ```
 
 ### DhcpLeases
 
 ```shell
-python AirStationCli.py dhcp-leases --login-skip
+python AirStationCli.py dhcp-leases
 # table
 ```
 
