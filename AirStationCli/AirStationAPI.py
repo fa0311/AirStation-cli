@@ -171,7 +171,7 @@ class AirStationCliNat:
                     self.data[i * 6 + ii][0]: self.data[i * 6 + ii][2]
                     for ii in range(6)
                 },
-                id=self.data[i * 6][1]
+                id=self.data[i * 6 + 1][1]
             )
             for i in range(int(len(self.data) / 6))
         ]
@@ -268,7 +268,7 @@ class AirStationCliNatData:
             "nosave_session_num": self.AirStationCli.get_session(),
         }
         params = {"timestampt": self.AirStationCli.get_timestamp()}
-        self.content = self.AirStationCli.re_format(
+        self.AirStationCli.content = self.AirStationCli.re_format(
             self.AirStationCli.session.post(
                 self.AirStationCli.BASE_URL + "nat_reg.html", params=params, data=data
             ).content
