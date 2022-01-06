@@ -32,7 +32,7 @@ def main():
     arg = argpar.parse_args()
 
     # インスタンスの初期化
-    airstation = AirStationAPI.AirStationAPI(default_gateway=arg.default_gateway)
+    airstation = AirStationAPI.AirStationCli(default_gateway=arg.default_gateway)
 
     # ログイン
     if arg.login_mode == "auto":
