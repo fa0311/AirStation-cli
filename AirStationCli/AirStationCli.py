@@ -55,7 +55,7 @@ def main():
         data = airstation.nat_reg().data
 
     elif arg.action == "dhcp-leases":
-        data = airstation.nat_reg().data
+        data = airstation.dhcp_leases().data
 
     # フォーマット
     if type(data) is str:
