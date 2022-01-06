@@ -75,6 +75,15 @@ def main():
         elif arg.format == "json":
             if arg.output:
                 with open(arg.output, "w") as f:
-                    json.dump([dict(zip(columns, row)) for row in table], f, indent=arg.json_indent)
+                    json.dump(
+                        [dict(zip(columns, row)) for row in table],
+                        f,
+                        indent=arg.json_indent,
+                    )
             else:
-                print(json.dumps([dict(zip(columns, row)) for row in table], indent=arg.json_indent))
+                print(
+                    json.dumps(
+                        [dict(zip(columns, row)) for row in table],
+                        indent=arg.json_indent,
+                    )
+                )

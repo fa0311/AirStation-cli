@@ -2,6 +2,7 @@ import requests
 import re
 from dataclasses import dataclass
 import datetime
+import html
 
 
 class AirStationCli:
@@ -12,12 +13,12 @@ class AirStationCli:
 
     def get_red_info(self):
         reg = r'<div style="color:red">(.*?)</div>'
-        find = re.findall(reg, self.response.content.decode("utf-8"))
+        find = re.findall(reg, self.content)
         return False if len(find) == 0 else find[0]
 
     def get_title(self):
         reg = r"<title>(.*?)</title>"
-        find = re.findall(reg, self.response.content.decode("utf-8"))
+        find = re.findall(reg, self.content)
         return False if len(find) == 0 else find[0]
 
     def is_redirect_page(self):
@@ -26,15 +27,20 @@ class AirStationCli:
     def is_wait(self):
         return self.get_title() == "しばらくお待ちください。"
 
+    def re_format(self, content):
+        return html.unescape(content.decode("utf-8"))
+
     def get_session(self):
         reg = r'<input type="hidden" name="nosave_session_num" value="(\d+)">'
-        return int(re.findall(reg, self.response.text)[0])
+        return int(re.findall(reg, self.content)[0])
 
     def get_timestamp(self):
         return datetime.datetime.now().strftime("%a %b %d %Y %H:%M:%S GMT 0900 (日本標準時)")
 
     def login_get(self):
-        self.response = self.session.get(self.BASE_URL + "login.html")
+        self.content = self.re_format(
+            self.session.get(self.BASE_URL + "login.html").content
+        )
         return self
 
     def login_post(self, username, password, mobile=False):
@@ -53,23 +59,33 @@ class AirStationCli:
                 "mobile": "on",
                 "nosave_session_num": self.get_session(),
             }
-        self.response = self.session.post(self.BASE_URL + "login.html", data=data)
+        self.content = self.re_format(
+            self.session.post(self.BASE_URL + "login.html", data=data).content
+        )
         return self
 
     def index_adv(self):
-        self.response = self.session.get(self.BASE_URL + "index_adv.html")
+        self.content = self.re_format(
+            self.session.get(self.BASE_URL + "index_adv.html").content
+        )
         return self
 
     def init(self):
-        self.response = self.session.get(self.BASE_URL + "init.html")
+        self.content = self.re_format(
+            self.session.get(self.BASE_URL + "init.html").content
+        )
         return AirStationCliInit(AirStationCli=self)
 
     def route_reg(self):
-        self.response = self.session.get(self.BASE_URL + "route_reg.html")
+        self.content = self.re_format(
+            self.session.get(self.BASE_URL + "route_reg.html").content
+        )
         return self
 
     def nat_reg(self):
-        self.response = self.session.get(self.BASE_URL + "nat_reg.html")
+        self.content = self.re_format(
+            self.session.get(self.BASE_URL + "nat_reg.html").content
+        )
         data = {
             "name": "(id_name|id_wan|id_lanip|id_proto|id_wport|id_lport|id_enableBtn)",
             "any": "(.*?)",
@@ -78,11 +94,13 @@ class AirStationCli:
         reg = '<span id="{name}{number}">{any}</span>'.format(**data)
         return AirStationCliNat(
             AirStationCli=self,
-            data=re.findall(reg, self.response.content.decode("utf-8")),
+            data=re.findall(reg, self.content),
         )
 
     def dhcp_leases(self):
-        self.response = self.session.get(self.BASE_URL + "dhcps_lease.html")
+        self.content = self.re_format(
+            self.session.get(self.BASE_URL + "dhcps_lease.html").content
+        )
         data = {
             "name": "(DHCPLANIP|DHCPLMAC|LeasePeriod|DHCPLease|id_BtuStatus)",
             "any": "(.*?)",
@@ -91,7 +109,7 @@ class AirStationCli:
         reg = '<td><div name="{name}{number}">{any}</div></td>'.format(**data)
         return AirStationCliDHCP(
             AirStationCli=self,
-            data=re.findall(reg, self.response.content.decode("utf-8")),
+            data=re.findall(reg, self.content),
         )
 
 
@@ -245,8 +263,10 @@ class AirStationCliNatData:
             "nosave_session_num": self.AirStationCli.get_session(),
         }
         params = {"timestampt": self.AirStationCli.get_timestamp()}
-        self.response = self.AirStationCli.session.post(
-            self.AirStationCli.BASE_URL + "nat_reg.html", params=params, data=data
+        self.content = self.re_format(
+            self.AirStationCli.session.post(
+                self.AirStationCli.BASE_URL + "nat_reg.html", params=params, data=data
+            ).content
         )
         return self.AirStationCli.is_wait()
 
