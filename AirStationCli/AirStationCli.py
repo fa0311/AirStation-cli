@@ -1,8 +1,9 @@
-import AirStationAPI, AirStationTable
+import AirStationAPI
 import argparse
 import csv
 from dataclasses import asdict, astuple
 import pandas as pd
+import json
 
 if __name__ == "__main__":
 
@@ -15,14 +16,16 @@ if __name__ == "__main__":
     argpar.add_argument("action")
     argpar.add_argument("-u", "-user", "--username", default="admin")
     argpar.add_argument("-p", "-pass", "--password", default="password")
-    argpar.add_argument("--default-gateway", default="192.168.11.1")
-
-    argpar.add_argument(
-        "-f", "--format", default="table", choices=["table", "csv", "json"]
-    )
     argpar.add_argument(
         "--login-mode", default="auto", choices=["auto", "force", "skip"]
     )
+    argpar.add_argument("--default-gateway", default="192.168.11.1")
+
+    argpar.add_argument("-o", "--output")
+    argpar.add_argument(
+        "-f", "--format", default="table", choices=["table", "csv", "json"]
+    )
+    argpar.add_argument("--json-indent", type=int, default=None)
 
     argpar.add_argument("--mobile", action="store_true")
 
@@ -58,14 +61,20 @@ if __name__ == "__main__":
     if type(data) is str:
         print(data)
     elif type(data) is list:
-        if arg.format in ["table", "csv"]:
-            table = [tuple(asdict(data[0]).keys())[1:]]
-            for row in data:
-                table.append(astuple(row)[1:])
+        columns = tuple(asdict(data[0]).keys())[1:]
+        table = [astuple(row)[1:] for row in data]
+
         if arg.format == "table":
-            df = pd.DataFrame(table[1:], columns=table[0])
-            pd.set_option('display.unicode.east_asian_width', True)
+            df = pd.DataFrame(table[1:], columns=columns)
+            pd.set_option("display.unicode.east_asian_width", True)
             print(df)
         elif arg.format == "csv":
-            df = pd.DataFrame(table[1:], columns=table[0])
-            print(df.to_csv())
+            df = pd.DataFrame(table[1:], columns=columns)
+            output = df.to_csv(arg.output)
+            False if arg.output else print(output)
+        elif arg.format == "json":
+            if arg.output:
+                with open(arg.output, "w") as f:
+                    json.dump([dict(zip(columns, row)) for row in table], f, indent=arg.json_indent)
+            else:
+                print(json.dumps([dict(zip(columns, row)) for row in table], indent=arg.json_indent))
