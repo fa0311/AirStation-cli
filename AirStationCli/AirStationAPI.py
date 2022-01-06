@@ -87,7 +87,7 @@ class AirStationCli:
             self.session.get(self.BASE_URL + "nat_reg.html").content
         )
         data = {
-            "name": "(id_name|id_wan|id_lanip|id_proto|id_wport|id_lport|id_enableBtn)",
+            "name": "(id_name|id_wan|id_lanip|id_proto|id_wport|id_lport)",
             "any": "(.*?)",
             "number": "(\\d+)",
         }
@@ -132,18 +132,22 @@ class AirStationCliInit:
 
     def uploadcfg(self, cfgfile):
         file = {"nosave_F14": cfgfile}
-        self.AirStationCli.response = self.AirStationCli.session.post(
-            self.AirStationCli.BASE_URL + "init.html", files=file
+        self.AirStationCli.content = self.re_format(
+            self.AirStationCli.session.post(
+                self.AirStationCli.BASE_URL + "init.html", files=file
+            ).content
         )
-        return self.AirStationCli.response
+        return self.AirStationCli.is_wait()
 
     def reboot(self):
         data = {
             "nosave_reboot": 1,
             "nosave_session_num": self.AirStationCli.get_session(),
         }
-        self.AirStationCli.response = self.AirStationCli.session.post(
-            self.AirStationCli.BASE_URL + "init.html", data=data
+        self.AirStationCli.content = self.re_format(
+            self.AirStationCli.session.post(
+                self.AirStationCli.BASE_URL + "init.html", data=data
+            ).content
         )
         return self.AirStationCli.is_wait()
 
@@ -228,8 +232,10 @@ class AirStationCliNat:
                 )
 
         params = {"timestampt": self.AirStationCli.get_timestamp()}
-        self.AirStationCli.response = self.AirStationCli.session.post(
-            self.AirStationCli.BASE_URL + "nat_reg.html", params=params, data=data
+        self.AirStationCli.content = self.AirStationCli.re_format(
+            self.AirStationCli.session.post(
+                self.AirStationCli.BASE_URL + "nat_reg.html", params=params, data=data
+            ).content
         )
         return self.AirStationCli.is_wait()
 
@@ -243,7 +249,6 @@ class AirStationCliNatData:
     id_proto: str = None
     id_wport: str = None
     id_lport: str = None
-    id_enableBtn: str = None
     id: str = None
 
     def delete(self):
@@ -263,7 +268,7 @@ class AirStationCliNatData:
             "nosave_session_num": self.AirStationCli.get_session(),
         }
         params = {"timestampt": self.AirStationCli.get_timestamp()}
-        self.content = self.re_format(
+        self.content = self.AirStationCli.re_format(
             self.AirStationCli.session.post(
                 self.AirStationCli.BASE_URL + "nat_reg.html", params=params, data=data
             ).content
@@ -284,7 +289,7 @@ class AirStationCliDHCP:
                     self.data[i * 4 + ii][0]: self.data[i * 4 + ii][2]
                     for ii in range(4)
                 },
-                id=self.data[i * 4][1]
+                id=self.data[i * 4 + 1][1]
             )
             for i in range(int(len(self.data) / 4))
         ]
@@ -296,8 +301,12 @@ class AirStationCliDHCP:
             "nosave_session_num": self.AirStationCli.get_session(),
         }
         params = {"timestampt": self.AirStationCli.get_timestamp()}
-        self.AirStationCli.response = self.AirStationCli.session.post(
-            self.AirStationCli.BASE_URL + "dhcps_lease.html", params=params, data=data
+        self.AirStationCli.content = self.AirStationCli.re_format(
+            self.AirStationCli.session.post(
+                self.AirStationCli.BASE_URL + "dhcps_lease.html",
+                params=params,
+                data=data,
+            ).content
         )
         return self.AirStationCli.is_wait()
 
@@ -317,7 +326,11 @@ class AirStationCliDHCPData:
             "nosave_session_num": self.AirStationCli.get_session(),
         }
         params = {"timestampt": self.AirStationCli.get_timestamp()}
-        self.AirStationCli.response = self.AirStationCli.session.post(
-            self.AirStationCli.BASE_URL + "dhcps_lease.html", params=params, data=data
+        self.AirStationCli.content = self.AirStationCli.re_format(
+            self.AirStationCli.session.post(
+                self.AirStationCli.BASE_URL + "dhcps_lease.html",
+                params=params,
+                data=data,
+            ).content
         )
         return self.AirStationCli.is_wait()
