@@ -38,6 +38,7 @@ python AirStationCli.py name
 python AirStationCli.py nat-reg
 # table
 ```
+![screenshots](./docs/asset/img/nat_reg.png)
 
 ### DhcpLeases
 
@@ -45,6 +46,7 @@ python AirStationCli.py nat-reg
 python AirStationCli.py dhcp-leases
 # table
 ```
+![screenshots](./docs/asset/img/dhcp-leases.png)
 
 ## Usage-API
 
@@ -135,7 +137,6 @@ Attributes
 - id_proto: str
 - id_wport: str
 - id_lport: str
-- id_enableBtn: str
 - id: str
 
 Methods
