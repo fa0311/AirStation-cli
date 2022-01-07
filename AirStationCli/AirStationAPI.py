@@ -5,7 +5,7 @@ import datetime
 import html
 
 
-class AirStationCli:
+class AirStationAPI:
     def __init__(self, default_gateway="192.168.11.1"):
         self.USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36"
         self.session = requests.session()
@@ -74,7 +74,7 @@ class AirStationCli:
         self.content = self.re_format(
             self.session.get(self.BASE_URL + "init.html").content
         )
-        return AirStationCliInit(AirStationCli=self)
+        return AirStationAPIInit(AirStationAPI=self)
 
     def route_reg(self):
         self.content = self.re_format(
@@ -92,8 +92,8 @@ class AirStationCli:
             "number": "(\\d+)",
         }
         reg = '<span id="{name}{number}">{any}</span>'.format(**data)
-        return AirStationCliNat(
-            AirStationCli=self,
+        return AirStationAPINat(
+            AirStationAPI=self,
             data=re.findall(reg, self.content),
         )
 
@@ -107,15 +107,15 @@ class AirStationCli:
             "number": "(\\d+)",
         }
         reg = '<td><div name="{name}{number}">{any}</div></td>'.format(**data)
-        return AirStationCliDHCP(
-            AirStationCli=self,
+        return AirStationAPIDHCP(
+            AirStationAPI=self,
             data=re.findall(reg, self.content),
         )
 
 
-class AirStationCliInit:
-    def __init__(self, AirStationCli):
-        self.AirStationCli = AirStationCli
+class AirStationAPIInit:
+    def __init__(self, AirStationAPI):
+        self.AirStationAPI = AirStationAPI
 
     def downloadcfg(self):
         data = {
@@ -123,38 +123,38 @@ class AirStationCliInit:
             "nosave_saveConfRC4Key": "",
             "nosave_saveConfRC4Encryption": 0,
             "nosave_loadConfRC4Encryption": 0,
-            "nosave_session_num": self.AirStationCli.get_session(),
+            "nosave_session_num": self.AirStationAPI.get_session(),
         }
-        response = self.AirStationCli.session.post(
-            self.AirStationCli.BASE_URL + "init.html", data=data
+        response = self.AirStationAPI.session.post(
+            self.AirStationAPI.BASE_URL + "init.html", data=data
         )
         return response
 
     def uploadcfg(self, cfgfile):
         file = {"nosave_F14": cfgfile}
-        self.AirStationCli.content = self.re_format(
-            self.AirStationCli.session.post(
-                self.AirStationCli.BASE_URL + "init.html", files=file
+        self.AirStationAPI.content = self.re_format(
+            self.AirStationAPI.session.post(
+                self.AirStationAPI.BASE_URL + "init.html", files=file
             ).content
         )
-        return self.AirStationCli.is_wait()
+        return self.AirStationAPI.is_wait()
 
     def reboot(self):
         data = {
             "nosave_reboot": 1,
-            "nosave_session_num": self.AirStationCli.get_session(),
+            "nosave_session_num": self.AirStationAPI.get_session(),
         }
-        self.AirStationCli.content = self.re_format(
-            self.AirStationCli.session.post(
-                self.AirStationCli.BASE_URL + "init.html", data=data
+        self.AirStationAPI.content = self.re_format(
+            self.AirStationAPI.session.post(
+                self.AirStationAPI.BASE_URL + "init.html", data=data
             ).content
         )
-        return self.AirStationCli.is_wait()
+        return self.AirStationAPI.is_wait()
 
 
 @dataclass
-class AirStationCliNat:
-    AirStationCli: object = None
+class AirStationAPINat:
+    AirStationAPI: object = None
     data: list = None
 
     def __post_init__(self):
@@ -165,8 +165,8 @@ class AirStationCliNat:
                 )
 
         self.data = [
-            AirStationCliNatData(
-                AirStationCli=self.AirStationCli,
+            AirStationAPINatData(
+                AirStationAPI=self.AirStationAPI,
                 **{
                     self.data[i * 6 + ii][0]: self.data[i * 6 + ii][2]
                     for ii in range(6)
@@ -195,7 +195,7 @@ class AirStationCliNat:
             "nosave_add_tmp": 0,
             "nosave_erritem": "",
             "nosave_errcontent": "",
-            "nosave_session_num": self.AirStationCli.get_session(),
+            "nosave_session_num": self.AirStationAPI.get_session(),
         }
         for value in self.data:
             if value.id_name == group:
@@ -231,18 +231,18 @@ class AirStationCliNat:
                     }
                 )
 
-        params = {"timestampt": self.AirStationCli.get_timestamp()}
-        self.AirStationCli.content = self.AirStationCli.re_format(
-            self.AirStationCli.session.post(
-                self.AirStationCli.BASE_URL + "nat_reg.html", params=params, data=data
+        params = {"timestampt": self.AirStationAPI.get_timestamp()}
+        self.AirStationAPI.content = self.AirStationAPI.re_format(
+            self.AirStationAPI.session.post(
+                self.AirStationAPI.BASE_URL + "nat_reg.html", params=params, data=data
             ).content
         )
-        return self.AirStationCli.is_wait()
+        return self.AirStationAPI.is_wait()
 
 
 @dataclass
-class AirStationCliNatData:
-    AirStationCli: object = None
+class AirStationAPINatData:
+    AirStationAPI: object = None
     id_name: str = None
     id_wan: str = None
     id_lanip: str = None
@@ -265,26 +265,26 @@ class AirStationCliNatData:
             "nosave_del": self.id,
             "nosave_erritem": "",
             "nosave_errcontent": "",
-            "nosave_session_num": self.AirStationCli.get_session(),
+            "nosave_session_num": self.AirStationAPI.get_session(),
         }
-        params = {"timestampt": self.AirStationCli.get_timestamp()}
-        self.AirStationCli.content = self.AirStationCli.re_format(
-            self.AirStationCli.session.post(
-                self.AirStationCli.BASE_URL + "nat_reg.html", params=params, data=data
+        params = {"timestampt": self.AirStationAPI.get_timestamp()}
+        self.AirStationAPI.content = self.AirStationAPI.re_format(
+            self.AirStationAPI.session.post(
+                self.AirStationAPI.BASE_URL + "nat_reg.html", params=params, data=data
             ).content
         )
-        return self.AirStationCli.is_wait()
+        return self.AirStationAPI.is_wait()
 
 
 @dataclass
-class AirStationCliDHCP:
-    AirStationCli: object = None
+class AirStationAPIDHCP:
+    AirStationAPI: object = None
     data: list = None
 
     def __post_init__(self):
         self.data = [
-            AirStationCliDHCPData(
-                AirStationCli=self.AirStationCli,
+            AirStationAPIDHCPData(
+                AirStationAPI=self.AirStationAPI,
                 **{
                     self.data[i * 4 + ii][0]: self.data[i * 4 + ii][2]
                     for ii in range(4)
@@ -298,22 +298,22 @@ class AirStationCliDHCP:
         data = {
             "nosave_dhcp_ip": dhcp_ip,
             "nosave_dhcp_mac": dhcp_mac,
-            "nosave_session_num": self.AirStationCli.get_session(),
+            "nosave_session_num": self.AirStationAPI.get_session(),
         }
-        params = {"timestampt": self.AirStationCli.get_timestamp()}
-        self.AirStationCli.content = self.AirStationCli.re_format(
-            self.AirStationCli.session.post(
-                self.AirStationCli.BASE_URL + "dhcps_lease.html",
+        params = {"timestampt": self.AirStationAPI.get_timestamp()}
+        self.AirStationAPI.content = self.AirStationAPI.re_format(
+            self.AirStationAPI.session.post(
+                self.AirStationAPI.BASE_URL + "dhcps_lease.html",
                 params=params,
                 data=data,
             ).content
         )
-        return self.AirStationCli.is_wait()
+        return self.AirStationAPI.is_wait()
 
 
 @dataclass
-class AirStationCliDHCPData:
-    AirStationCli: object = None
+class AirStationAPIDHCPData:
+    AirStationAPI: object = None
     DHCPLANIP: str = None
     DHCPLMAC: str = None
     LeasePeriod: str = None
@@ -323,14 +323,14 @@ class AirStationCliDHCPData:
     def delete(self):
         data = {
             "nosave_DDelete": int(self.id),
-            "nosave_session_num": self.AirStationCli.get_session(),
+            "nosave_session_num": self.AirStationAPI.get_session(),
         }
-        params = {"timestampt": self.AirStationCli.get_timestamp()}
-        self.AirStationCli.content = self.AirStationCli.re_format(
-            self.AirStationCli.session.post(
-                self.AirStationCli.BASE_URL + "dhcps_lease.html",
+        params = {"timestampt": self.AirStationAPI.get_timestamp()}
+        self.AirStationAPI.content = self.AirStationAPI.re_format(
+            self.AirStationAPI.session.post(
+                self.AirStationAPI.BASE_URL + "dhcps_lease.html",
                 params=params,
                 data=data,
             ).content
         )
-        return self.AirStationCli.is_wait()
+        return self.AirStationAPI.is_wait()
