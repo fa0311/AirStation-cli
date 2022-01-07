@@ -1,41 +1,59 @@
 # AirStation-Cli(Beta)
 
+ブラウザでしか制御ができないBUFFALO AirStationをCUIで操作するソフトウェア及びPythonAPI<br>
+
+## Installation
+
+```shell
+pip install git+https://github.com/fa0311/AirStation-cli
+pip install -r requirements.txt
+```
+
 ## Usage-Cli
 ### Description
 
 ```shell
 # Python
-python AirStationCli.py [OPTIONS] [ACTION]
+python AirStationCli [OPTIONS] [ACTION]
 ```
+
+#### Action
+- Login
+- GetName
+- NatRegulation
+- DhcpLeases
+
+#### Options
+
+| argument          | alias    | default      | choice            | type |
+|-------------------|----------|--------------|-------------------|------|
+| --default-gateway |          | 192.168.11.1 |                   |      |
+| --username        | -u -user | admin        |                   |      |
+| --password        | -p -pass | password     |                   |      |
+| --login-mode      |          | auto         | auto, force, skip |      |
+| --mobile          |          | false        |                   |      |
+| --format          | -f       | table        | table, json, csv  |      |
+| --output          | -o       | None         | file path         |      |
+| --json-indent     |          | None         |                   | int  |
 
 ### Login
 
 ```shell
-python AirStationCli.py login --default-gateway 192.168.11.1 -u admin -p password
+python AirStationCli nothing --default-gateway 192.168.11.1 -u admin -p password
 # ログインに成功しました。 or パスワードが間違っています。etc.
 ```
-| argument          | alias    | default      | description       |
-|-------------------|----------|--------------|-------------------|
-| --default-gateway |          | 192.168.11.1 |                   |
-| --username        | -u -user | admin        |                   |
-| --password        | -p -pass | password     |                   |
-| --login-mode      |          | auto         | auto, force, skip |
-| --mobile          |          | false        |                   |
-| --format          | -f       | table        | table, json, csv  |
-| --output          | -o       | None         | file path         |
-| --json-indent     |          | None         | int               |
 
 ### GetName
 
 ```shell
-python AirStationCli.py name
+python AirStationCli name
 # WSR-1166DHPL2 - BUFFALO AirStation
 ```
 
 ### NatRegulation
 
 ```shell
-python AirStationCli.py nat-reg
+python AirStationCli nat-reg
 # table
 ```
 ![screenshots](./docs/asset/img/nat_reg.png)
@@ -43,7 +61,7 @@ python AirStationCli.py nat-reg
 ### DhcpLeases
 
 ```shell
-python AirStationCli.py dhcp-leases
+python AirStationCli dhcp-leases
 # table
 ```
 ![screenshots](./docs/asset/img/dhcp-leases.png)
@@ -53,8 +71,8 @@ python AirStationCli.py dhcp-leases
 ### AirStationCli.AirStationCli
 
 ```python
-from AirStationCli import AirStationCli
-airstation = AirStationCli.AirStationCli(default_gateway="192.168.11.1")
+from AirStationCli import AirStationAPI
+airstation = AirStationAPI.AirStationAPI(default_gateway="192.168.11.1")
 ```
 
 | argument        | default      |
@@ -90,7 +108,7 @@ airstation.init()
 ```
 
 Attributes
-- AirStationCli: object
+- AirStationAPI: object
 Methods
 - downloadcfg(): str
 - uploadcfg(cfgfile): str
@@ -105,8 +123,8 @@ airstation.nat_reg()
 ```
 
 Attributes
-- AirStationCli: object
-- data: List[AirStationCliNatData Object]
+- AirStationAPI: object
+- data: List[AirStationAPINatData Object]
 
 Methods
 - add(group, lanip, wan="wan", nosave_proto="tcp/udp", porttype="tcp", wanport=80, lanport=80, ip="1.1.1.1"): bool
@@ -128,9 +146,9 @@ Methods
 airstation.nat_reg().add(group="test", lanip="192.168.11.30", nosave_proto="tcp/udp", porttype="tcp", wanport=80, lanport=80)
 ```
 
-### @dataclass AirStationCliNatData
+#### @dataclass AirStationAPINatData
 Attributes
-- AirStationCli: object
+- AirStationAPI: object
 - id_name: str
 - id_wan: str
 - id_lanip: str
@@ -149,8 +167,8 @@ airstation.dhcp_leases()
 ```
 
 Attributes
-- AirStationCli: object
-- data: List[AirStationCliDHCPData Object]
+- AirStationAPI: object
+- data: List[AirStationAPIDHCPData Object]
 
 Methods
 - add(dhcp_ip, dhcp_mac): bool
@@ -159,9 +177,9 @@ Methods
 airstation.dhcp_leases().add("192.168.11.30","00:00:5e:00:53:00")
 ```
 
-### @dataclass AirStationCliDHCPData
+#### @dataclass AirStationAPIDHCPData
 Attributes
-- AirStationCli: object
+- AirStationAPI: object
 - DHCPLANIP: str
 - DHCPLMAC: str
 - LeasePeriod: str
