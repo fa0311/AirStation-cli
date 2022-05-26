@@ -46,6 +46,7 @@ def main():
         )
         if info:
             exit(info)
+    data = None
 
     # アクション
     if arg.action == "name":
