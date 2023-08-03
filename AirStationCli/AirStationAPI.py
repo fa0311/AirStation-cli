@@ -12,7 +12,7 @@ class AirStationAPI:
         self.BASE_URL = "http://{0}/".format(default_gateway)
 
     def get_red_info(self):
-        reg = r'<div style="color:red">(.*?)</div>'
+        reg = r'<span id="loginMsgSpan">(.*?)</span>'
         find = re.findall(reg, self.content)
         return False if len(find) == 0 else find[0]
 
@@ -31,8 +31,13 @@ class AirStationAPI:
         return html.unescape(content.decode("utf-8"))
 
     def get_session(self):
-        reg = r'<input type="hidden" name="nosave_session_num" value="(\d+)">'
-        return int(re.findall(reg, self.content)[0])
+        # reg = r'<input type="hidden" name="nosave_session_num" value="(\d+)">'
+        # dj.appendSessionId("0138625016");
+        content = self.re_format(
+            self.session.get(self.BASE_URL + "js/djmisc.js").content
+        )
+        reg = r'dj\.appendSessionId\("(\d+)"\);'
+        return int(re.findall(reg, content)[0])
 
     def get_timestamp(self):
         return datetime.datetime.now().strftime("%a %b %d %Y %H:%M:%S GMT 0900 (日本標準時)")
@@ -46,23 +51,25 @@ class AirStationAPI:
     def login_post(self, username, password, mobile=False):
         if mobile:
             data = {
-                "nosave_Username": username,
-                "nosave_Password": password,
-                "MobileDevice": 0,
-                "nosave_session_num": self.get_session(),
+                "username": username,
+                "password": password,
+                "fsid": self.get_session(),
             }
         else:
             data = {
-                "nosave_Username": username,
-                "nosave_Password": password,
-                "MobileDevice": 0,
-                "mobile": "on",
-                "nosave_session_num": self.get_session(),
+                "username": username,
+                "password": password,
+                "fsid": self.get_session(),
             }
-        self.content = self.re_format(
-            self.session.post(self.BASE_URL + "login.html", data=data).content
+
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        res = self.session.post(
+            self.BASE_URL + "cgi-bin/platform.fcgi",
+            data=data,
+            params={"form": "fmLogin"},
+            headers=headers,
         )
-        return self
+        return res.text
 
     def index_adv(self):
         self.content = self.re_format(
